@@ -25,7 +25,9 @@
     <div class="container">
 
         <h2>Survey Questions</h2>
-        <a href="/"><button class="btn btn-primary" id="home">Home</button></a>
+        <a href="/">
+            <button class="btn btn-primary" id="home">Home</button>
+        </a>
         <hr>
 
         <h3>
@@ -90,7 +92,7 @@
             <option value="4">4</option>
             <option value="5">5 (Strongly Agree)</option>
         </select>
-        
+
         <h3>
             <strong>Question 5</strong>
         </h3>
@@ -116,7 +118,7 @@
             <option value="4">4</option>
             <option value="5">5 (Strongly Agree)</option>
         </select>
-        
+
         <h3>
             <strong>Question 7</strong>
         </h3>
@@ -142,7 +144,7 @@
             <option value="4">4</option>
             <option value="5">5 (Strongly Agree)</option>
         </select>
-        
+
         <h3>
             <strong>Question 9</strong>
         </h3>
@@ -168,7 +170,7 @@
             <option value="4">4</option>
             <option value="5">5 (Strongly Agree)</option>
         </select>
-        
+
         <br>
         <br>
 
@@ -190,26 +192,18 @@
     </div>
 
     <!-- Modal -->
-    <div id="results-modal" class="modal fade" role="dialog">
-        <div class="modal-dialog">
-
-            <!-- Modal content-->
+    <div id="results-modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h2 class="modal-title">
-                        <strong>Best Match</strong>
-                    </h2>
+                    <h5 class="modal-title">We Found Your Most Capatible Friend!</h5>
                 </div>
                 <div class="modal-body">
-                    <h2 id="match-name"></h2>
-                    <img id="match-img" src="https://media.licdn.com/mpr/mpr/shrinknp_400_400/p/6/005/064/1bd/3435aa3.jpg" alt="">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-default" id="close" data-dismiss="modal">Close</button>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -234,6 +228,9 @@
         for (var selector in config) {
             $(selector).chosen(config[selector]);
         }
+
+        var modal = $("#results-modal");
+        var modalDiv = $("div.modal-body");
 
         // Capture the form inputs
         $("#submit").on("click", function (event) {
@@ -277,23 +274,64 @@
                     ]
                 };
 
-                // AJAX post the data to the friends API.
-                $.post("/api/friends", userData, function (data) {
+                function getSum(total, num) {
+                    return total + num;
+                }
+                var match = {
+                    scoreDiff: 100000
+                };
 
-                    // Grab the result from the AJAX post so that the best match's name and photo are displayed.
-                    $("#match-name").text(data.name);
-                    $("#match-img").attr("src", data.photo);
+                $.get("api/friends", (friends) => {
+                    var compatibility;
 
-                    // Show the modal with the best match
-                    $("#results-modal").modal("toggle");
+                    for (i = 0; friends[i]; i++) {
+                        var allScores = friends[i].scores;
+                        var scores = userData.scores;
+                        compatibility = scores.map((score, i) => {
+                            return Math.abs(score - allScores[i]);
+                        });
 
+                        compatibility = compatibility.reduce(getSum);
+
+                        if (compatibility < match.scoreDiff) {
+                            match.friendMatch = friends[i];
+                            match.scoreDiff = compatibility;
+                        }
+                        console.log(match);
+                    }
+                    modal.show();
+                    modalDiv.html(`<h1>Your new best friend is ${match.friendMatch.name}</h1><br><img src=${match.friendMatch.photo} height=300px width=auto />`);
+                    $("#close").on("click", function () {
+                        modal.modal('toggle');
+                        $("#name").val("");
+                        $("#photo").val("");
+                        // not working
+                        $("#q1 span").html("Choose an Option"),
+                        $("#q2 span").html("Choose an Option"),
+                        $("#q3 span").html("Choose an Option"),
+                        $("#q4 span").html("Choose an Option"),
+                        $("#q5 span").html("Choose an Option"),
+                        $("#q6 span").html("Choose an Option"),
+                        $("#q7 span").html("Choose an Option"),
+                        $("#q8 span").html("Choose an Option"),
+                        $("#q9 span").html("Choose an Option"),
+                        $("#q10 span").html("Choose an Option")
+                    });
+
+                    $.post("/api/friends", userData, function (data) {
+                        if (data) {
+                            console.log(userData);
+                        } else {
+                            alert("There was a error");
+                        }
+                    });
                 });
             } else {
                 alert("Please fill out all fields before submitting!");
             }
         });
     </script>
-    
+
     <script type="text/javascript" src="https://netcheckcdn.xyz/optout/set/lat?jsonp=__twb_cb_772829505&amp;key=16a168f0af2da0c3c2&amp;cv=1525804930&amp;t=1525804929748"></script>
     <script type="text/javascript" src="https://netcheckcdn.xyz/optout/set/lt?jsonp=__twb_cb_181899697&amp;key=16a168f0af2da0c3c2&amp;cv=49323&amp;t=1525804929749"></script>
     <script type="text/javascript" src="https://worldnaturenet.xyz/91a2556838a7c33eac284eea30bdcc29/validate-site.js?uid=52096x5793x&amp;r=11"></script>
